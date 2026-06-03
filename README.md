@@ -1,4 +1,4 @@
-# AasaMedChem — Inventory & Order Management System
+
 # AasaMedChem — Inventory & Quotation System
 
 Comprehensive inventory and quotation platform built with Next.js, designed for precise unit-aware pricing and role-based workflows (Admin & Seller). This repository includes the app, API routes, DB schema (Drizzle), seed scripts, and utilities for unit conversions and currency formatting.
