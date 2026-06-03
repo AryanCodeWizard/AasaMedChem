@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
-import { sql } from '@/lib/db';
 import { createProductSchema } from '@/lib/validations/product';
+import { requireRole } from '@/lib/auth/guard';
+import { sql } from '@/lib/db';
 
 // GET /api/products — list products with search + pagination
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { error, session } = await requireRole(['admin', 'seller']);
+  if (error) return error;
 
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q') || '';
@@ -16,7 +15,7 @@ export async function GET(request: Request) {
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')));
   const offset = (page - 1) * limit;
 
-  const role = (session.user as { role: string }).role;
+  const role = (session!.user as { role: string }).role;
   const isAdmin = role === 'admin';
 
   try {
@@ -102,11 +101,8 @@ export async function GET(request: Request) {
 
 // POST /api/products — create product (admin only)
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if ((session.user as { role: string }).role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const { error, session } = await requireRole(['admin']);
+  if (error) return error;
 
   try {
     const body = await request.json();

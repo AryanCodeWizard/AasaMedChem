@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
+import { requireRole } from '@/lib/auth/guard';
 import { sql } from '@/lib/db';
 import { updateProductSchema } from '@/lib/validations/product';
 
 // GET /api/products/[id]
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { error, session } = await requireRole(['admin', 'seller']);
+  if (error) return error;
 
   const { id } = await params;
 
@@ -21,7 +20,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 });
 
-    const role = (session.user as { role: string }).role;
+    const role = (session!.user as { role: string }).role;
     if (role !== 'admin' && !product.is_active) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
@@ -35,11 +34,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 // PATCH /api/products/[id] — admin only
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if ((session.user as { role: string }).role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const { error, session } = await requireRole(['admin']);
+  if (error) return error;
 
   const { id } = await params;
 
@@ -91,11 +87,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
 // DELETE /api/products/[id] — soft delete (admin only)
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if ((session.user as { role: string }).role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const { error, session } = await requireRole(['admin']);
+  if (error) return error;
 
   const { id } = await params;
 

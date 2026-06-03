@@ -40,7 +40,40 @@ export const createProductSchema = z.object({
   }
 });
 
-export const updateProductSchema = createProductSchema.partial();
+export const updateProductSchema = z
+  .object({
+    name: z.string().min(2, 'Name must be at least 2 characters').max(200).trim().optional(),
+    sku: z.string().max(50).regex(/^[A-Z0-9\-]+$/, 'SKU must be uppercase alphanumeric with hyphens').optional().or(z.literal('')).optional(),
+    description: z.string().max(2000).optional(),
+    category_id: z.string().uuid().optional().nullable(),
+    base_unit: z.enum(VALID_UNITS, { message: 'Invalid unit code' }).optional(),
+    allowed_units: z.array(z.enum(VALID_UNITS)).min(1, 'At least one allowed unit is required').optional(),
+    price_per_base_unit: z.string().regex(/^\d{1,12}(\.\d{1,6})?$/, 'Invalid price format').optional(),
+    stock_quantity: z.string().regex(/^\d{1,14}(\.\d{1,6})?$/, 'Invalid stock quantity').optional(),
+    low_stock_alert: z.string().regex(/^\d{1,14}(\.\d{1,6})?$/, 'Invalid low stock value').optional(),
+  })
+  .superRefine((data, ctx) => {
+    // For updates, only validate unit-dimension consistency when both fields are provided
+    if (data.base_unit && data.allowed_units) {
+      const baseDim = UNIT_DIMENSIONS[data.base_unit as string];
+      for (const unit of data.allowed_units as string[]) {
+        if (UNIT_DIMENSIONS[unit] !== baseDim) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['allowed_units'],
+            message: `All units must be of same dimension. '${unit}' is ${UNIT_DIMENSIONS[unit]}, but base unit '${data.base_unit}' is ${baseDim}`,
+          });
+        }
+      }
+      if (!(data.allowed_units as string[]).includes(data.base_unit as string)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['allowed_units'],
+          message: `Base unit '${data.base_unit}' must be included in allowed units`,
+        });
+      }
+    }
+  });
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
