@@ -230,25 +230,6 @@ const { baseQty, lineTotal } = calculateLineTotal(orderedQty, unit.to_base, prod
 
 ---
 
-If you want, I can now:
-
-- update `scripts/seed.ts` to insert `units` automatically and commit the change, or
-- create a small test suite for `lib/units/calculations.ts` and add a CI workflow.
-
-Which would you prefer next?
-│       ├── products/               # Products CRUD
-│       ├── quotations/             # Quotations CRUD
-│       └── users/                  # Users CRUD
-├── lib/
-│   ├── db/                         # Neon client, schema, migrations
-│   ├── auth/                       # NextAuth config, role guard
-│   ├── units/                      # Unit conversions, calculations
-│   ├── validations/                # Zod schemas
-│   └── utils/                      # Currency formatting
-├── components/shared/              # Shared UI components
-├── scripts/seed.ts                 # Database seeder
-└── middleware.ts                   # Auth route protection
-```
 
 ## 🔒 Security
 
